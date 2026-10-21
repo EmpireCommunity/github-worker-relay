@@ -31,6 +31,8 @@ export default {
           return new Response('Missing release payload', { status: 400 });
         }
 
+        const orgAvatar = payload.organization?.avatar_url || payload.repository?.owner?.avatar_url || "https://avatars.githubusercontent.com/u/300231788?v=4";
+
         await dispatchNotifications(env, {
           repoName: payload.repository?.name || 'Projeto',
           repoUrl: payload.repository?.html_url || '',
@@ -40,7 +42,8 @@ export default {
           color: release.prerelease ? 0xFEE75C : 0x57F287, // Amarelo ou Verde
           body: release.body || 'Nenhum detalhe adicional informado na release.',
           authorName: release.author?.login,
-          authorAvatar: release.author?.avatar_url
+          authorAvatar: release.author?.avatar_url,
+          botAvatar: orgAvatar
         });
 
         return new Response('Release notification sent', { status: 200 });
@@ -87,6 +90,8 @@ export default {
           return new Response('Changelog parsed but body was empty', { status: 200 });
         }
 
+        const orgAvatar = payload.organization?.avatar_url || payload.repository?.owner?.avatar_url || "https://avatars.githubusercontent.com/u/300231788?v=4";
+
         await dispatchNotifications(env, {
           repoName: payload.repository.name,
           repoUrl: payload.repository.html_url,
@@ -96,7 +101,8 @@ export default {
           color: isUnreleased ? 0x5865F2 : 0x2ECC71, // Blurple ou Verde Esmeralda
           body: body,
           authorName: payload.pusher?.name || payload.sender?.login,
-          authorAvatar: payload.sender?.avatar_url
+          authorAvatar: payload.sender?.avatar_url,
+          botAvatar: orgAvatar
         });
 
         return new Response('Push notification sent', { status: 200 });
@@ -272,7 +278,7 @@ async function sendToDiscord(webhookUrl, data) {
 
   const payload = {
     username: "EmpireHub Changelog Relay",
-    avatar_url: "https://avatars.githubusercontent.com/u/190886561?s=200&v=4",
+    avatar_url: data.botAvatar || "https://avatars.githubusercontent.com/u/300231788?v=4",
     embeds: [embed]
   };
 
