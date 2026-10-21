@@ -6,7 +6,23 @@ Cloudflare Worker serverless que captura webhooks da organização [DiscordEmpir
 
 ## 🎯 Objetivo
 
-Manter a comunidade e equipe atualizadas em tempo real sobre o desenvolvimento dos projetos da organização (como [`EmpireMuse`](https://github.com/DiscordEmpireHub/EmpireMuse), [`EmpireHub`](https://github.com/DiscordEmpireHub/EmpireHub), [`EmpireEngine`](https://github.com/DiscordEmpireHub/EmpireEngine), [`EmpireSite`](https://github.com/DiscordEmpireHub/EmpireSite), [`EmpireGames`](https://github.com/DiscordEmpireHub/EmpireGames), [`EmpireGamesDevelopment`](https://github.com/DiscordEmpireHub/EmpireGamesDevelopment), [`EmpireMuse-RPC-app`](https://github.com/DiscordEmpireHub/EmpireMuse-RPC-app), [`EmpireBot`](https://github.com/DiscordEmpireHub/EmpireBot), etc.), transformando commits e alterações em `CHANGELOG.md` ou publicações de releases em embeds informativos e legíveis no Discord.
+Manter a comunidade e equipe atualizadas em tempo real sobre o desenvolvimento de todos os projetos da organização, transformando commits e alterações em `CHANGELOG.md` ou publicações de releases em embeds informativos e legíveis no Discord:
+
+- 🏛️ **Principal / Core**:
+  - [`EmpireHub`](https://github.com/DiscordEmpireHub/EmpireHub) — Plataforma central e ecossistema do Hub.
+- 🌐 **Portal & Bots**:
+  - [`EmpireSite`](https://github.com/DiscordEmpireHub/EmpireSite) — Portal institucional e web.
+  - [`EmpireBot`](https://github.com/DiscordEmpireHub/EmpireBot) — Bot multifuncional e dashboard de gerenciamento.
+- 🎵 **Música & Presença**:
+  - [`EmpireMuse`](https://github.com/DiscordEmpireHub/EmpireMuse) — Bot de áudio e música com suporte a Lavalink e reprodução multissource.
+  - [`EmpireMuse-RPC-app`](https://github.com/DiscordEmpireHub/EmpireMuse-RPC-app) — Cliente de Rich Presence (RPC) para Discord.
+  - [`EmpireMuse-LL-binaries`](https://github.com/DiscordEmpireHub/EmpireMuse-LL-binaries) — Binários e dependências nativas de áudio.
+- 🎮 **Jogos & Engine**:
+  - [`EmpireEngine`](https://github.com/DiscordEmpireHub/EmpireEngine) — Motor de jogos, renderização e pacote central de assets.
+  - [`EmpireGames`](https://github.com/DiscordEmpireHub/EmpireGames) — Repositório central e catálogo de jogos da plataforma.
+  - [`EmpireGamesDevelopment`](https://github.com/DiscordEmpireHub/EmpireGamesDevelopment) — Guias, templates e documentação para criação de jogos.
+- ⚙️ **Infraestrutura**:
+  - [`github-worker-relay`](https://github.com/DiscordEmpireHub/github-worker-relay) — Worker Cloudflare para relé de notificações e changelogs.
 
 ---
 
