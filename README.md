@@ -6,7 +6,7 @@ Cloudflare Worker serverless que captura webhooks da organização [DiscordEmpir
 
 ## 🎯 Objetivo
 
-Manter a comunidade e equipe atualizadas em tempo real sobre o desenvolvimento dos projetos da organização (como `EmpireMuse`, `EmpireHub`, `EmpireEngine`, `EmpireBot`, etc.), transformando commits e alterações em `CHANGELOG.md` ou publicações de releases em embeds informativos e legíveis no Discord.
+Manter a comunidade e equipe atualizadas em tempo real sobre o desenvolvimento dos projetos da organização (como [`EmpireMuse`](https://github.com/DiscordEmpireHub/EmpireMuse), [`EmpireHub`](https://github.com/DiscordEmpireHub/EmpireHub), [`EmpireEngine`](https://github.com/DiscordEmpireHub/EmpireEngine), [`EmpireSite`](https://github.com/DiscordEmpireHub/EmpireSite), [`EmpireGames`](https://github.com/DiscordEmpireHub/EmpireGames), [`EmpireGamesDevelopment`](https://github.com/DiscordEmpireHub/EmpireGamesDevelopment), [`EmpireMuse-RPC-app`](https://github.com/DiscordEmpireHub/EmpireMuse-RPC-app), [`EmpireBot`](https://github.com/DiscordEmpireHub/EmpireBot), etc.), transformando commits e alterações em `CHANGELOG.md` ou publicações de releases em embeds informativos e legíveis no Discord.
 
 ---
 
