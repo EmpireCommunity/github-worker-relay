@@ -1,6 +1,3 @@
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "empirehub-changelog-relay",
-  "main": "src/index.js",
-  "compatibility_date": "2026-10-21"
-}
+name = "empirehub-changelog-relay"
+main = "src/index.js"
+compatibility_date = "2026-10-21"
