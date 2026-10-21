@@ -31,7 +31,7 @@ export default {
           return new Response('Missing release payload', { status: 400 });
         }
 
-        await sendToDiscord(env.DISCORD_WEBHOOK_URL, {
+        await dispatchNotifications(env, {
           repoName: payload.repository?.name || 'Projeto',
           repoUrl: payload.repository?.html_url || '',
           url: release.html_url || payload.repository?.html_url,
@@ -87,7 +87,7 @@ export default {
           return new Response('Changelog parsed but body was empty', { status: 200 });
         }
 
-        await sendToDiscord(env.DISCORD_WEBHOOK_URL, {
+        await dispatchNotifications(env, {
           repoName: payload.repository.name,
           repoUrl: payload.repository.html_url,
           url: payload.head_commit?.url || `${payload.repository.html_url}/blob/${branch}/${changelogFile}`,
@@ -109,6 +109,51 @@ export default {
     }
   }
 };
+
+/**
+ * Obtém os webhooks configurados no ambiente (DISCORD_WEBHOOK_URL_1, _2, etc., com fallback para DISCORD_WEBHOOK_URL)
+ */
+export function getWebhookUrls(env) {
+  const urls = [];
+
+  // Suporte a DISCORD_WEBHOOK_URL_1, DISCORD_WEBHOOK_URL_2, ...
+  let index = 1;
+  while (env && env[`DISCORD_WEBHOOK_URL_${index}`]) {
+    const url = env[`DISCORD_WEBHOOK_URL_${index}`].trim();
+    if (url) urls.push(url);
+    index++;
+  }
+
+  // Fallback de retrocompatibilidade caso ainda exista DISCORD_WEBHOOK_URL sem índice
+  if (urls.length === 0 && env?.DISCORD_WEBHOOK_URL) {
+    const url = env.DISCORD_WEBHOOK_URL.trim();
+    if (url) urls.push(url);
+  }
+
+  return urls;
+}
+
+/**
+ * Dispara as notificações para as URLs de Webhook ativas
+ */
+async function dispatchNotifications(env, data) {
+  const webhookUrls = getWebhookUrls(env);
+
+  if (webhookUrls.length === 0) {
+    throw new Error('Nenhuma URL configurada (defina DISCORD_WEBHOOK_URL_1 nas variáveis de ambiente).');
+  }
+
+  // Dispara em paralelo para todos os webhooks configurados
+  const results = await Promise.allSettled(
+    webhookUrls.map(url => sendToDiscord(url, data))
+  );
+
+  const errors = results.filter(r => r.status === 'rejected');
+  if (errors.length === results.length) {
+    // Se todos falharem, propaga o primeiro erro
+    throw errors[0].reason;
+  }
+}
 
 /**
  * Analisa o CHANGELOG.md seguindo o padrão Keep a Changelog ou títulos comuns de versão.
@@ -203,10 +248,6 @@ export function formatBodyForDiscord(body, maxLength = 3800) {
  * Envia o webhook formatado para o Discord
  */
 async function sendToDiscord(webhookUrl, data) {
-  if (!webhookUrl) {
-    throw new Error('DISCORD_WEBHOOK_URL não configurada no ambiente.');
-  }
-
   const titlePrefix = data.badge ? `[${data.badge}] ` : '';
 
   const embed = {
@@ -231,7 +272,7 @@ async function sendToDiscord(webhookUrl, data) {
 
   const payload = {
     username: "EmpireHub Changelog Relay",
-    avatar_url: "https://avatars.githubusercontent.com/u/190886561?s=200&v=4", // Avatar ou GitHub
+    avatar_url: "https://avatars.githubusercontent.com/u/190886561?s=200&v=4",
     embeds: [embed]
   };
 

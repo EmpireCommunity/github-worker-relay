@@ -60,11 +60,14 @@ github-worker-relay/
 
 ### 1. Variáveis de Ambiente no Cloudflare Workers
 
-No painel do Cloudflare Workers (em **Settings > Variables and Secrets** ou **Variáveis de ambiente**), defina:
+No painel do Cloudflare Workers (em **Settings > Variables and Secrets** ou **Variáveis de ambiente**), configure os webhooks dos canais de destino:
 
 | Variável | Descrição | Exemplo |
 | :--- | :--- | :--- |
-| `DISCORD_WEBHOOK_URL` | URL do Webhook do canal de texto no Discord | `https://discord.com/api/webhooks/...` |
+| `DISCORD_WEBHOOK_URL_1` | URL do Webhook principal (Canal de Atualizações) | `https://discord.com/api/webhooks/...` |
+| `DISCORD_WEBHOOK_URL_2` | *(Opcional)* URL secundária para outro canal / regras futuras | `https://discord.com/api/webhooks/...` |
+
+> 💡 O worker suporta múltiplos webhooks sequenciais (`DISCORD_WEBHOOK_URL_1`, `DISCORD_WEBHOOK_URL_2`, etc.) e mantém compatibilidade com `DISCORD_WEBHOOK_URL` caso já estivesse configurado.
 
 ### 2. Configurações de Build no Cloudflare Workers
 
