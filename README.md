@@ -50,7 +50,7 @@ github-worker-relay/
 │   └── index.js         # Lógica do Worker, roteamento de webhooks e formatação Discord
 ├── CHANGELOG.md         # Registro de versões do Worker
 ├── package.json         # Dependências (wrangler) e scripts
-├── wrangler.toml        # Configuração do Cloudflare Worker
+├── wrangler.jsonc       # Configuração do Cloudflare Worker (JSONC + Schema)
 └── README.md            # Documentação técnica
 ```
 
