@@ -3,9 +3,6 @@
   "name": "github-worker-relay",
   "main": "src/index.js",
   "compatibility_date": "2026-10-21",
-  "vars": {
-    "DISCORD_WEBHOOK_URL_1": "https://discord.com/api/webhooks/1562463428034166885/ZVoskDhvbJAIX0XWqzEy4G28xVONJZHuVkPMHEN_j0OAKmXbysCcV64tmjgfu-SHP-O9"
-  },
   "observability": {
     "logs": {
       "enabled": true,
