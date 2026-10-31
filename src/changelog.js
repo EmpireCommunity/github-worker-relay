@@ -3,7 +3,7 @@
  */
 
 import { classifySection, classifyConventional } from './kinds.js';
-import { simplifyItem, stripMarkdown, truncate } from './format.js';
+import { MAX_INTRO_LENGTH, simplifyItem, stripMarkdown, truncate } from './format.js';
 
 const BULLET = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 const FENCE = /^\s*(```|~~~)/;
@@ -166,7 +166,7 @@ export function parseReleaseNotes(body) {
  * O parágrafo de abertura das notas: o texto antes do primeiro título, item de lista ou rótulo em negrito, sem markdown pesado
  * e cortado em `max` caracteres. String vazia se não houver.
  */
-export function releaseIntro(body, max = 400) {
+export function releaseIntro(body, max = MAX_INTRO_LENGTH) {
   const lines = [];
   for (const line of String(body || '').split(/\r?\n/)) {
     if (FENCE.test(line) || /^\s*#{1,6}\s/.test(line) || BULLET.test(line) || BOLD_LABEL.test(line)) break;

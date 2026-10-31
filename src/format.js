@@ -10,6 +10,7 @@ export const MAX_EMBED_TOTAL = 6000;
 export const MAX_ITEM_LENGTH = 120;
 export const MAX_ITEMS_PER_SECTION = 6;
 export const MAX_RELEASE_ITEMS_PER_SECTION = 10;
+export const MAX_INTRO_LENGTH = 400;
 
 export const COLORS = { release: 0x57f287, prerelease: 0xfee75c, push: 0x5865f2 };
 

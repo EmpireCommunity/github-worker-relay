@@ -3,6 +3,7 @@
   "name": "github-worker-relay",
   "main": "src/index.js",
   "compatibility_date": "2026-10-21",
+  "keep_vars": true,
   "observability": {
     "logs": {
       "enabled": true,

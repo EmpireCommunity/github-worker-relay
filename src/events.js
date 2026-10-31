@@ -4,7 +4,7 @@
 
 import { describeVersion, extractAddedChanges, findChangelogPath, parseReleaseNotes, releaseIntro } from './changelog.js';
 import { summarizeCommits } from './commits.js';
-import { buildDescription, COLORS, MAX_RELEASE_ITEMS_PER_SECTION, stripMarkdown, truncate } from './format.js';
+import { buildDescription, COLORS, MAX_INTRO_LENGTH, MAX_RELEASE_ITEMS_PER_SECTION, stripMarkdown, truncate } from './format.js';
 
 const ZERO_SHA = /^0+$/;
 
@@ -77,6 +77,9 @@ export async function buildPushMessage(payload, fetchFile) {
   };
 }
 
+/** A tag na linha de destaque: só letras, dígitos e . _ + - / (o `_` escapado); sem sintaxe de menção nem de markdown. */
+const safeTag = (tag) => tag.replace(/[^\p{L}\p{N}._+\-/ ]/gu, '').replace(/_/g, '\\_');
+
 /**
  * A mensagem de uma release publicada: título com a tag, linha de destaque acima do embed (só na estável, com a menção
  * opcional ao cargo `mentionRoleId`), abertura das notas, seções com até 10 itens e o avatar da organização como miniatura.
@@ -98,13 +101,13 @@ export function buildReleaseMessage(payload, { mentionRoleId } = {}) {
 
   const description = groups.length
     ? prefix + buildDescription(groups, { source: 'changelog', limit: 3900 - prefix.length, maxItems: MAX_RELEASE_ITEMS_PER_SECTION })
-    : prefix + (truncate(stripMarkdown(String(release.body || '')), 600) || 'Sem notas de versão.');
+    : prefix + (truncate(stripMarkdown(String(release.body || '')), MAX_INTRO_LENGTH) || 'Sem notas de versão.');
   const prerelease = Boolean(release.prerelease);
   const org = orgInfo(payload);
 
   return {
     title: `🚀 ${repo.name} ${tagLabel}${prerelease ? ' · 🧪 Pré-lançamento' : ''}`,
-    ...(prerelease ? {} : { content: `🎉 **Nova versão do ${repo.name}: ${tagLabel.replace(/[^A-Za-z0-9.+\-/ ]/g, '')}**`, mentionRoleId }),
+    ...(prerelease ? {} : { content: `🎉 **Nova versão do ${repo.name}: ${safeTag(tagLabel)}**`, mentionRoleId }),
     url: release.html_url || repo.html_url,
     description,
     color: prerelease ? COLORS.prerelease : COLORS.release,

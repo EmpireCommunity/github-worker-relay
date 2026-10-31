@@ -240,7 +240,7 @@ test('release estável: destaque acima do embed, menção só ao cargo válido, 
   assert.match(comEspaco.content, /^<@&123456789012345678> /);
 
   const tagEstranha = await send({ body, tag_name: 'v1_x||<@&9>' }, {});
-  assert.equal(tagEstranha.content, '🎉 **Nova versão do EmpireMuse: v1x9**');
+  assert.equal(tagEstranha.content, '🎉 **Nova versão do EmpireMuse: v1\\_x9**');
 
   for (const ruim of ['<@&1>', '12ab', '1 2', '']) {
     const sem = await send({ body }, { RELEASE_MENTION_ROLE_ID: ruim });

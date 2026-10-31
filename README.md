@@ -105,7 +105,7 @@ npx wrangler secret put GITHUB_TOKEN            # opcional: leitura de repositó
 
 ### 🔧 Variáveis do worker
 
-Não são segredos: defina como *variável* (**Settings → Variables and Secrets → Text**) e **não** as coloque no `wrangler.jsonc` do repositório.
+Não são segredos: defina como *variável* (**Settings → Variables and Secrets → Text**) e **não** as coloque no `wrangler.jsonc` do repositório. O `wrangler.jsonc` tem `"keep_vars": true`: sem isso, o `wrangler deploy` (wrangler 3.x, também no Workers Builds) apaga as variáveis do painel que não estão no arquivo, e `ANNOUNCE_PUSH` e `RELEASE_MENTION_ROLE_ID` sumiriam a cada deploy.
 
 | Variável | Para quê |
 | :--- | :--- |
