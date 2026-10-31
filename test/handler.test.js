@@ -16,6 +16,7 @@ import {
 } from './helpers.js';
 
 const ENV = { GITHUB_WEBHOOK_SECRET: SECRET, DISCORD_WEBHOOK_URL_1: DISCORD_URL };
+const PUSH_ENV = { ...ENV, ANNOUNCE_PUSH: 'true' };
 
 const OLD_CHANGELOG = '# Changelog\n\n## [2.0.0] - em preparação\n\n### Adicionado\n- **Existente**: já estava.\n';
 const NEW_CHANGELOG =
@@ -92,6 +93,19 @@ test('ping assinado responde 200 sem enviar nada', async () => {
   assert.equal(fetchFn.calls.length, 0);
 });
 
+test('push desligado por padrão; ANNOUNCE_PUSH=true (sem diferenciar maiúsculas) liga', async () => {
+  for (const env of [ENV, { ...ENV, ANNOUNCE_PUSH: 'false' }, { ...ENV, ANNOUNCE_PUSH: '1' }]) {
+    const { response, text, fetchFn } = await call(githubRequest({ event: 'push', payload: pushPayload() }), env);
+    assert.equal(response.status, 200);
+    assert.equal(text, 'Ignored push: push-announcements-off');
+    assert.equal(fetchFn.calls.length, 0);
+  }
+  const on = fakeFetch(discordOk);
+  const { text } = await call(githubRequest({ event: 'push', payload: pushPayload() }), { ...ENV, ANNOUNCE_PUSH: 'True' }, on);
+  assert.equal(text, 'Notification sent');
+  assert.equal(discordBodies(on).length, 1);
+});
+
 test('push que não vira mensagem: outra branch, tag, remoção, branch nova e sem commits', async () => {
   const casos = [
     pushPayload({ ref: 'refs/heads/feature' }),
@@ -101,7 +115,7 @@ test('push que não vira mensagem: outra branch, tag, remoção, branch nova e s
     pushPayload({ commits: [] })
   ];
   for (const payload of casos) {
-    const { response, text, fetchFn } = await call(githubRequest({ event: 'push', payload }));
+    const { response, text, fetchFn } = await call(githubRequest({ event: 'push', payload }), PUSH_ENV);
     assert.equal(response.status, 200);
     assert.match(text, /Ignored push/);
     assert.equal(fetchFn.calls.length, 0);
@@ -110,7 +124,7 @@ test('push que não vira mensagem: outra branch, tag, remoção, branch nova e s
 
 test('push com CHANGELOG: baixa o arquivo antes e depois por SHA e envia só as linhas novas', async () => {
   const fetchFn = fakeFetch(rawChangelog, discordOk);
-  const { response } = await call(githubRequest({ event: 'push', payload: changelogPush() }), ENV, fetchFn);
+  const { response } = await call(githubRequest({ event: 'push', payload: changelogPush() }), PUSH_ENV, fetchFn);
   assert.equal(response.status, 200);
   const raw = fetchFn.calls.filter((call) => call.url.startsWith('https://raw.githubusercontent.com/'));
   assert.deepEqual(
@@ -138,7 +152,7 @@ test('com GITHUB_TOKEN o arquivo vem pela API (repositório privado) e o token s
       ? new Response(url.includes(BEFORE) ? OLD_CHANGELOG : NEW_CHANGELOG)
       : undefined;
   const fetchFn = fakeFetch(api, discordOk);
-  await call(githubRequest({ event: 'push', payload: changelogPush() }), { ...ENV, GITHUB_TOKEN: 'ghp_teste' }, fetchFn);
+  await call(githubRequest({ event: 'push', payload: changelogPush() }), { ...PUSH_ENV, GITHUB_TOKEN: 'ghp_teste' }, fetchFn);
   assert.equal(fetchFn.calls.some((call) => call.url.startsWith('https://raw.githubusercontent.com/')), false);
   assert.equal(discordBodies(fetchFn).length, 1);
   const discordCall = fetchFn.calls.find((call) => call.url.startsWith('https://discord.com/'));
@@ -147,14 +161,14 @@ test('com GITHUB_TOKEN o arquivo vem pela API (repositório privado) e o token s
 
 test('push sem CHANGELOG usa os commits; falha ao ler o CHANGELOG também', async () => {
   const semArquivo = fakeFetch(discordOk);
-  await call(githubRequest({ event: 'push', payload: pushPayload() }), ENV, semArquivo);
+  await call(githubRequest({ event: 'push', payload: pushPayload() }), PUSH_ENV, semArquivo);
   const [embed] = discordBodies(semArquivo)[0].embeds;
   assert.equal(embed.title, '🛠️ EmpireMuse · atualização na main');
   assert.match(embed.description, /🐛 \*\*Correções\*\*/);
   assert.match(embed.description, /corrige bug/);
 
   const githubFora = fakeFetch((url) => (url.startsWith('https://raw.githubusercontent.com/') ? new Response('erro', { status: 500 }) : undefined), discordOk);
-  const { response } = await call(githubRequest({ event: 'push', payload: changelogPush() }), ENV, githubFora);
+  const { response } = await call(githubRequest({ event: 'push', payload: changelogPush() }), PUSH_ENV, githubFora);
   assert.equal(response.status, 200);
   assert.match(discordBodies(githubFora)[0].embeds[0].description, /changelog/i);
 });
@@ -163,7 +177,7 @@ test('release publicada: título com a tag, seções e cor; pré-lançamento com
   const stable = fakeFetch(discordOk);
   await call(githubRequest({ event: 'release', payload: releasePayload() }), ENV, stable);
   const [embed] = discordBodies(stable)[0].embeds;
-  assert.equal(embed.title, '🚀 EmpireMuse · v2.0.0');
+  assert.equal(embed.title, '🚀 EmpireMuse v2.0.0');
   assert.equal(embed.color, 0x57f287);
   assert.match(embed.description, /Painel web/);
   assert.match(embed.description, /🐛 \*\*Corrigido\*\*/);
@@ -203,4 +217,38 @@ test('só URLs de webhook do Discord são chamadas; várias saem em paralelo', a
   const { response: erro } = await call(githubRequest({ event: 'release', payload: releasePayload() }), { GITHUB_WEBHOOK_SECRET: SECRET }, semUrl);
   assert.equal(erro.status, 500);
   assert.equal(semUrl.calls.length, 0);
+});
+
+test('release estável: destaque acima do embed, menção só ao cargo válido, intro, "Ao atualizar" primeiro e miniatura; pré-lançamento sem destaque', async () => {
+  const body = 'Resumo da versão com **negrito** e [link](https://x.test).\n\n**Ao atualizar:**\n- Troque o token antes.\n\n### Adicionado\n- **Painel web**: novo.';
+  const send = async (release, env) => {
+    const fetchFn = fakeFetch(discordOk);
+    await call(githubRequest({ event: 'release', payload: releasePayload(release) }), { ...ENV, ...env }, fetchFn);
+    return discordBodies(fetchFn)[0];
+  };
+
+  const stable = await send({ body }, { RELEASE_MENTION_ROLE_ID: '123456789012345678' });
+  assert.equal(stable.content, '<@&123456789012345678> 🎉 **Nova versão do EmpireMuse: v2.0.0**');
+  assert.deepEqual(stable.allowed_mentions, { parse: [], roles: ['123456789012345678'] });
+  assert.equal(stable.embeds[0].thumbnail.url, 'https://avatars.githubusercontent.com/u/1');
+  const { description } = stable.embeds[0];
+  assert.ok(description.startsWith('Resumo da versão com negrito e link.\n\n'));
+  assert.ok(description.indexOf('⚠️ **Ao atualizar**') < description.indexOf('✨ **Adicionado**'));
+  assert.doesNotMatch(description, /Outras mudanças/);
+
+  const comEspaco = await send({ body }, { RELEASE_MENTION_ROLE_ID: ' 123456789012345678\n' });
+  assert.match(comEspaco.content, /^<@&123456789012345678> /);
+
+  const tagEstranha = await send({ body, tag_name: 'v1_x||<@&9>' }, {});
+  assert.equal(tagEstranha.content, '🎉 **Nova versão do EmpireMuse: v1x9**');
+
+  for (const ruim of ['<@&1>', '12ab', '1 2', '']) {
+    const sem = await send({ body }, { RELEASE_MENTION_ROLE_ID: ruim });
+    assert.equal(sem.content, '🎉 **Nova versão do EmpireMuse: v2.0.0**');
+    assert.deepEqual(sem.allowed_mentions, { parse: [] });
+  }
+
+  const pre = await send({ body, tag_name: 'v2.0.0-rc.1', name: 'v2.0.0-rc.1', prerelease: true }, { RELEASE_MENTION_ROLE_ID: '123456789012345678' });
+  assert.equal(pre.content, undefined);
+  assert.deepEqual(pre.allowed_mentions, { parse: [] });
 });

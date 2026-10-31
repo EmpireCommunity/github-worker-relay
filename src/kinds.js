@@ -4,6 +4,7 @@
  */
 
 export const KINDS = {
+  upgrade: { emoji: '⚠️', label: 'Ao atualizar', commitLabel: 'Ao atualizar', one: 'aviso ao atualizar', many: 'avisos ao atualizar' },
   added: { emoji: '✨', label: 'Adicionado', commitLabel: 'Novidades', one: 'novidade', many: 'novidades' },
   changed: { emoji: '🔄', label: 'Alterado', commitLabel: 'Alterações', one: 'alteração', many: 'alterações' },
   fixed: { emoji: '🐛', label: 'Corrigido', commitLabel: 'Correções', one: 'correção', many: 'correções' },
@@ -59,6 +60,7 @@ export const KINDS = {
 
 /** Ordem de exibição das seções. */
 export const KIND_ORDER = [
+  'upgrade',
   'added',
   'changed',
   'fixed',
@@ -77,6 +79,7 @@ export const KIND_ORDER = [
 ];
 
 const SECTION_PATTERNS = [
+  ['upgrade', /^(ao atualizar|antes de atualizar|before updating|before upgrading)/i],
   ['added', /^(adicionad|added|novo|nova|novidade|new\b|features?\b)/i],
   ['changed', /^(alterad|changed|modificad|mudan[çc]a|atualizad|updated)/i],
   ['fixed', /^(corrigid|fixed|corre[çc][ãa]o|corre[çc][õo]es|bug ?fix)/i],

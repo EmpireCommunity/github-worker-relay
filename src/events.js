@@ -2,9 +2,9 @@
  * Dos eventos do GitHub (push e release) ao conteúdo da mensagem. Sem I/O próprio: a leitura de arquivos entra por `fetchFile`.
  */
 
-import { describeVersion, extractAddedChanges, findChangelogPath, parseReleaseNotes } from './changelog.js';
+import { describeVersion, extractAddedChanges, findChangelogPath, parseReleaseNotes, releaseIntro } from './changelog.js';
 import { summarizeCommits } from './commits.js';
-import { buildDescription, COLORS, stripMarkdown, truncate } from './format.js';
+import { buildDescription, COLORS, MAX_RELEASE_ITEMS_PER_SECTION, stripMarkdown, truncate } from './format.js';
 
 const ZERO_SHA = /^0+$/;
 
@@ -15,8 +15,17 @@ function orgInfo(payload) {
   };
 }
 
-/** Por que o push NÃO vira mensagem (texto), ou null se deve virar: só a branch padrão, com commits, sem tag nem remoção. */
-export function pushIgnoreReason(payload) {
+/** `ANNOUNCE_PUSH` ligado ("true", sem diferenciar maiúsculas). Sem isso o push não vira mensagem: só a release anuncia. */
+export function pushAnnouncementsOn(env) {
+  return String(env?.ANNOUNCE_PUSH ?? '').trim().toLowerCase() === 'true';
+}
+
+/**
+ * Por que o push NÃO vira mensagem (texto), ou null se deve virar: com `ANNOUNCE_PUSH` ligado, só a branch padrão, com
+ * commits, sem tag nem remoção.
+ */
+export function pushIgnoreReason(payload, env) {
+  if (!pushAnnouncementsOn(env)) return 'push-announcements-off';
   const branch = payload.repository?.default_branch;
   if (!branch || payload.ref !== `refs/heads/${branch}`) return 'not-default-branch';
   if (payload.deleted) return 'deleted';
@@ -68,8 +77,12 @@ export async function buildPushMessage(payload, fetchFile) {
   };
 }
 
-/** A mensagem de uma release publicada (título com a tag, notas em seções; pré-lançamento com selo). Null se não for "published". */
-export function buildReleaseMessage(payload) {
+/**
+ * A mensagem de uma release publicada: título com a tag, linha de destaque acima do embed (só na estável, com a menção
+ * opcional ao cargo `mentionRoleId`), abertura das notas, seções com até 10 itens e o avatar da organização como miniatura.
+ * Pré-lançamento ganha o selo e fica sem destaque nem menção. Null se não for "published".
+ */
+export function buildReleaseMessage(payload, { mentionRoleId } = {}) {
   const release = payload.release;
   if (payload.action !== 'published' || !release) return null;
   const repo = payload.repository;
@@ -77,21 +90,29 @@ export function buildReleaseMessage(payload) {
   const tagLabel = /^v/i.test(tag) || !/^\d/.test(tag) ? tag : `v${tag}`;
   const groups = parseReleaseNotes(release.body);
 
-  let description = groups.length
-    ? buildDescription(groups, { source: 'changelog' })
-    : truncate(stripMarkdown(String(release.body || '')), 600) || 'Sem notas de versão.';
+  let prefix = '';
   const name = String(release.name || '').trim();
-  if (name && name !== tag && name !== tagLabel) description = `**${truncate(stripMarkdown(name), 150)}**\n\n${description}`;
+  if (name && name !== tag && name !== tagLabel) prefix = `**${truncate(stripMarkdown(name), 150)}**\n\n`;
+  const intro = groups.length ? releaseIntro(release.body) : '';
+  if (intro) prefix += `${intro}\n\n`;
+
+  const description = groups.length
+    ? prefix + buildDescription(groups, { source: 'changelog', limit: 3900 - prefix.length, maxItems: MAX_RELEASE_ITEMS_PER_SECTION })
+    : prefix + (truncate(stripMarkdown(String(release.body || '')), 600) || 'Sem notas de versão.');
+  const prerelease = Boolean(release.prerelease);
+  const org = orgInfo(payload);
 
   return {
-    title: `🚀 ${repo.name} · ${tagLabel}${release.prerelease ? ' · 🧪 Pré-lançamento' : ''}`,
+    title: `🚀 ${repo.name} ${tagLabel}${prerelease ? ' · 🧪 Pré-lançamento' : ''}`,
+    ...(prerelease ? {} : { content: `🎉 **Nova versão do ${repo.name}: ${tagLabel.replace(/[^A-Za-z0-9.+\-/ ]/g, '')}**`, mentionRoleId }),
     url: release.html_url || repo.html_url,
     description,
-    color: release.prerelease ? COLORS.prerelease : COLORS.release,
+    color: prerelease ? COLORS.prerelease : COLORS.release,
     repoName: repo.name,
     repoUrl: repo.html_url,
     authorName: release.author?.login || payload.sender?.login,
     authorAvatar: release.author?.avatar_url || payload.sender?.avatar_url,
-    ...orgInfo(payload)
+    thumbnail: org.orgAvatar,
+    ...org
   };
 }

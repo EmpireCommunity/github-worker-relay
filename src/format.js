@@ -9,6 +9,7 @@ export const MAX_DESCRIPTION = 4096;
 export const MAX_EMBED_TOTAL = 6000;
 export const MAX_ITEM_LENGTH = 120;
 export const MAX_ITEMS_PER_SECTION = 6;
+export const MAX_RELEASE_ITEMS_PER_SECTION = 10;
 
 export const COLORS = { release: 0x57f287, prerelease: 0xfee75c, push: 0x5865f2 };
 
@@ -75,7 +76,7 @@ export function summaryLine(groups) {
       totals.set(section.kind, (totals.get(section.kind) || 0) + section.items.length);
     }
   }
-  return KIND_ORDER.filter((kind) => totals.get(kind))
+  return KIND_ORDER.filter((kind) => kind !== 'upgrade' && totals.get(kind))
     .map((kind) => `${KINDS[kind].emoji} ${countText(kind, totals.get(kind))}`)
     .join(' · ');
 }
@@ -105,10 +106,10 @@ function renderGroups(groups, maxItems, source) {
 /**
  * A descrição do embed: resumo + seções. Reduz os itens por seção até caber em `limit` e, no pior caso, corta o texto.
  */
-export function buildDescription(groups, { source = 'changelog', limit = 3900 } = {}) {
+export function buildDescription(groups, { source = 'changelog', limit = 3900, maxItems = MAX_ITEMS_PER_SECTION } = {}) {
   const summary = summaryLine(groups);
   let body = '';
-  for (let max = MAX_ITEMS_PER_SECTION; max >= 1; max--) {
+  for (let max = maxItems; max >= 1; max--) {
     body = renderGroups(groups, max, source);
     if ((summary ? summary.length + 2 : 0) + body.length <= limit) break;
   }
@@ -116,13 +117,17 @@ export function buildDescription(groups, { source = 'changelog', limit = 3900 } 
   return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
 }
 
+const ROLE_ID = /^\d{1,25}$/;
+
 function httpsUrl(url) {
   return typeof url === 'string' && url.startsWith('https://') ? url : undefined;
 }
 
 /**
  * O corpo do webhook do Discord. `data`: { title, url, description, color, repoName, repoUrl, authorName, authorAvatar,
- * orgName, orgAvatar }. O total do embed (título, descrição, autor e rodapé) fica abaixo de 6000 caracteres.
+ * orgName, orgAvatar, content?, mentionRoleId?, thumbnail? }.
+ * `content` é a linha acima do embed; `mentionRoleId` (só dígitos, senão ignorado) a antecede com a menção ao cargo, o único
+ * que a mensagem pode notificar. O total do embed (título, descrição, autor e rodapé) fica abaixo de 6000 caracteres.
  */
 export function buildDiscordPayload(data) {
   const title = truncate(data.title, MAX_TITLE);
@@ -146,7 +151,15 @@ export function buildDiscordPayload(data) {
     if (icon) embed.footer.icon_url = icon;
   }
 
+  const thumbnail = httpsUrl(data.thumbnail);
+  if (thumbnail) embed.thumbnail = { url: thumbnail };
+
   const payload = { allowed_mentions: { parse: [] }, embeds: [embed] };
+  const roleId = data.content && ROLE_ID.test(String(data.mentionRoleId || '').trim()) ? String(data.mentionRoleId).trim() : null;
+  if (data.content) {
+    payload.content = `${roleId ? `<@&${roleId}> ` : ''}${truncate(data.content, 500)}`;
+    if (roleId) payload.allowed_mentions = { parse: [], roles: [roleId] };
+  }
   // o Discord recusa nome de webhook com "discord" ou "clyde"; sem nome vale o do próprio webhook
   if (data.orgName && !/discord|clyde/i.test(data.orgName)) payload.username = truncate(data.orgName, 80);
   const avatar = httpsUrl(data.orgAvatar);

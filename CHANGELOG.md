@@ -5,6 +5,19 @@ Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.1.0] - 2026-10-31
+
+### Alterado
+- **Push desligado por padrão**: só a release é anunciada no Discord. Para voltar a anunciar os pushes na branch padrão, defina a variável `ANNOUNCE_PUSH=true` (os pushes ignorados respondem `Ignored push: push-announcements-off`).
+- **Título da release** passa a ser `🚀 <Repo> <tag>` (pré-lançamento mantém o selo 🧪).
+- Releases mostram até 10 itens por seção (o push segue com 6).
+
+### Adicionado
+- **Destaque na release estável**: uma linha acima do embed (`🎉 **Nova versão do <Repo>: <tag>**`), que não aparece no pré-lançamento. Com `RELEASE_MENTION_ROLE_ID` (só dígitos) a linha começa com a menção ao cargo, o único que a mensagem pode notificar (`allowed_mentions.roles`); valor inválido é ignorado.
+- **Abertura das notas**: o parágrafo antes do primeiro título (o resumo de uma linha) aparece no topo da descrição, sem markdown pesado e com até 400 caracteres.
+- **Seção "Ao atualizar"**: nas notas da release, uma linha só com `**Rótulo:**` vale como título de seção; `**Ao atualizar:**` vira a seção ⚠️ Ao atualizar, a primeira da mensagem, e fora da contagem do resumo.
+- **Miniatura** do embed da release com o avatar da organização (só `https`).
+
 ## [2.0.0] - 2026-10-24
 
 ### Adicionado

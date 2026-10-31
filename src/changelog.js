@@ -3,11 +3,13 @@
  */
 
 import { classifySection, classifyConventional } from './kinds.js';
-import { simplifyItem } from './format.js';
+import { simplifyItem, stripMarkdown, truncate } from './format.js';
 
 const BULLET = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 const FENCE = /^\s*(```|~~~)/;
 const REFERENCE_LINK = /^\[[^\]]+\]:\s*\S+/;
+// uma linha só com `**Rótulo:**` (ou `**Rótulo**:`) vale como cabeçalho de seção nas notas de release
+const BOLD_LABEL = /^\s*(?:\*\*([^*\n]+?):\*\*|\*\*([^*\n]+?)\*\*:)\s*$/;
 const CHANGELOG_PATH = /(^|\/)(changelog|changes)(\.md|\.markdown|\.txt)?$/i;
 
 /** Dos arquivos tocados pelos commits, o CHANGELOG mais perto da raiz; null se nenhum. */
@@ -134,6 +136,11 @@ export function parseReleaseNotes(body) {
       section = heading[1];
       continue;
     }
+    const label = BOLD_LABEL.exec(line);
+    if (label) {
+      section = label[1] || label[2];
+      continue;
+    }
     const match = BULLET.exec(line);
     if (!match || /^\*\*full changelog\*\*/i.test(match[3]) || match[1].length > 3) continue;
     const classified = classifySection(section);
@@ -153,6 +160,20 @@ export function parseReleaseNotes(body) {
     if (item) addTo(groups, null, kind, title, item);
   }
   return groups;
+}
+
+/**
+ * O parágrafo de abertura das notas: o texto antes do primeiro título, item de lista ou rótulo em negrito, sem markdown pesado
+ * e cortado em `max` caracteres. String vazia se não houver.
+ */
+export function releaseIntro(body, max = 400) {
+  const lines = [];
+  for (const line of String(body || '').split(/\r?\n/)) {
+    if (FENCE.test(line) || /^\s*#{1,6}\s/.test(line) || BULLET.test(line) || BOLD_LABEL.test(line)) break;
+    if (line.trim()) lines.push(line.trim());
+    else if (lines.length) break;
+  }
+  return truncate(stripMarkdown(lines.join(' ')), max);
 }
 
 const UNRELEASED = /unreleased|n[ãa]o lan[çc]ad|em desenvolvimento|em prepara[çc][ãa]o|pr[óo]xima vers[ãa]o|\bnext\b/i;
