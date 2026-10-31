@@ -61,7 +61,7 @@ Pré-lançamento ganha o selo 🧪 e a cor amarela, sem a linha de destaque nem 
 • Leitor do formato antigo (`pickle`)
 ```
 
-Cada item é simplificado: se a linha do CHANGELOG começa com `**Título**:`, só o título aparece; senão, a primeira frase, cortada em ~120 caracteres e sem links nem markdown pesado. No máximo 6 itens por seção (`… e mais N`), dentro dos limites do Discord (4096 caracteres na descrição e 6000 no embed).
+Cada item é simplificado: se a linha do CHANGELOG começa com `**Título**:`, só o título aparece; senão, a primeira frase, cortada em ~120 caracteres e sem links nem markdown pesado. No máximo 10 itens por seção na release e 6 no push (`… e mais N`), dentro dos limites do Discord (4096 caracteres na descrição e 6000 no embed).
 
 | Evento | Título | Cor |
 | :--- | :--- | :--- |
@@ -110,7 +110,7 @@ Não são segredos: defina como *variável* (**Settings → Variables and Secret
 | Variável | Para quê |
 | :--- | :--- |
 | `ANNOUNCE_PUSH` | *(Opcional)* `true` (sem diferenciar maiúsculas) volta a anunciar os pushes na branch padrão. Qualquer outro valor, ou sem ela, deixa só a release. |
-| `RELEASE_MENTION_ROLE_ID` | *(Opcional)* ID do cargo (só dígitos) a mencionar na release estável. Valor inválido é ignorado; o pré-lançamento nunca menciona. |
+| `RELEASE_MENTION_ROLE_ID` | *(Opcional)* ID do cargo (17 a 20 dígitos) a mencionar na release estável. Valor inválido é ignorado; o pré-lançamento nunca menciona. |
 
 > ⚠️ A URL de um webhook do Discord equivale a uma senha: quem a tem consegue postar no canal. Se alguma já esteve no repositório (como em versões antigas do `wrangler.jsonc`), **apague esse webhook no Discord e crie outro**, porque ela continua no histórico do Git.
 

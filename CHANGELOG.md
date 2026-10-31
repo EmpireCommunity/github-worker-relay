@@ -13,7 +13,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Releases mostram até 10 itens por seção (o push segue com 6).
 
 ### Adicionado
-- **Destaque na release estável**: uma linha acima do embed (`🎉 **Nova versão do <Repo>: <tag>**`), que não aparece no pré-lançamento. Com `RELEASE_MENTION_ROLE_ID` (só dígitos) a linha começa com a menção ao cargo, o único que a mensagem pode notificar (`allowed_mentions.roles`); valor inválido é ignorado.
+- **Destaque na release estável**: uma linha acima do embed (`🎉 **Nova versão do <Repo>: <tag>**`), que não aparece no pré-lançamento. Com `RELEASE_MENTION_ROLE_ID` (17 a 20 dígitos) a linha começa com a menção ao cargo, o único que a mensagem pode notificar (`allowed_mentions.roles`); valor inválido é ignorado.
 - **Abertura das notas**: o parágrafo antes do primeiro título (o resumo de uma linha) aparece no topo da descrição, sem markdown pesado e com até 400 caracteres.
 - **Seção "Ao atualizar"**: nas notas da release, uma linha só com `**Rótulo:**` vale como título de seção; `**Ao atualizar:**` vira a seção ⚠️ Ao atualizar, a primeira da mensagem, e fora da contagem do resumo.
 - **Miniatura** do embed da release com o avatar da organização (só `https`).

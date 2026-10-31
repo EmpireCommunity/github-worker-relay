@@ -118,7 +118,7 @@ export function buildDescription(groups, { source = 'changelog', limit = 3900, m
   return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
 }
 
-const ROLE_ID = /^\d{1,25}$/;
+const ROLE_ID = /^\d{17,20}$/;
 
 function httpsUrl(url) {
   return typeof url === 'string' && url.startsWith('https://') ? url : undefined;
@@ -127,7 +127,7 @@ function httpsUrl(url) {
 /**
  * O corpo do webhook do Discord. `data`: { title, url, description, color, repoName, repoUrl, authorName, authorAvatar,
  * orgName, orgAvatar, content?, mentionRoleId?, thumbnail? }.
- * `content` é a linha acima do embed; `mentionRoleId` (só dígitos, senão ignorado) a antecede com a menção ao cargo, o único
+ * `content` é a linha acima do embed; `mentionRoleId` (17 a 20 dígitos, senão ignorado) a antecede com a menção ao cargo, o único
  * que a mensagem pode notificar. O total do embed (título, descrição, autor e rodapé) fica abaixo de 6000 caracteres.
  */
 export function buildDiscordPayload(data) {
