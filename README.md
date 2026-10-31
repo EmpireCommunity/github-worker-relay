@@ -8,7 +8,9 @@ Funciona para **todos os repositórios** da organização com um único webhook 
 
 ## ✨ O que ele faz
 
-### Push na branch padrão
+### Push na branch padrão (desligado por padrão)
+
+**Por padrão o push não é anunciado**: só a release vira mensagem. Para anunciar também os pushes, defina a variável `ANNOUNCE_PUSH=true` (veja [Variáveis do worker](#-variáveis-do-worker)); sem ela o worker responde `200` com `Ignored push: push-announcements-off`. Com a variável ligada vale o que segue.
 
 Só conta o push na branch padrão do repositório (`default_branch`). Tags, outras branches, remoções, branches novas e pushes sem commits são ignorados.
 
@@ -32,7 +34,15 @@ Só conta o push na branch padrão do repositório (`default_branch`). Tags, out
 
 ### Release publicada
 
-O título leva a tag (`v2.0.0`); as notas viram o mesmo formato de seções quando tiverem `###` ou listas. Pré-lançamento ganha o selo 🧪 e a cor amarela.
+A release estável é anunciada com destaque:
+
+- uma linha **acima do embed**: `🎉 **Nova versão do <Repo>: <tag>**`, com a menção ao cargo à frente se `RELEASE_MENTION_ROLE_ID` estiver definido (a mensagem só notifica esse cargo);
+- o título leva a tag (`🚀 <Repo> v2.0.0`) e a miniatura é o avatar da organização;
+- o **parágrafo de abertura** das notas (o texto antes do primeiro título, até 400 caracteres e sem markdown pesado) vem no topo;
+- uma linha só com `**Rótulo:**` vale como título de seção; `**Ao atualizar:**` vira a seção ⚠️ **Ao atualizar**, sempre a primeira;
+- as demais notas viram o mesmo formato de seções (`###` ou listas), com até **10 itens por seção**.
+
+Pré-lançamento ganha o selo 🧪 e a cor amarela, sem a linha de destaque nem menção.
 
 ### Exemplo de mensagem
 
@@ -51,13 +61,13 @@ O título leva a tag (`v2.0.0`); as notas viram o mesmo formato de seções quan
 • Leitor do formato antigo (`pickle`)
 ```
 
-Cada item é simplificado: se a linha do CHANGELOG começa com `**Título**:`, só o título aparece; senão, a primeira frase, cortada em ~120 caracteres e sem links nem markdown pesado. No máximo 6 itens por seção (`… e mais N`), dentro dos limites do Discord (4096 caracteres na descrição e 6000 no embed).
+Cada item é simplificado: se a linha do CHANGELOG começa com `**Título**:`, só o título aparece; senão, a primeira frase, cortada em ~120 caracteres e sem links nem markdown pesado. No máximo 10 itens por seção na release e 6 no push (`… e mais N`), dentro dos limites do Discord (4096 caracteres na descrição e 6000 no embed).
 
 | Evento | Título | Cor |
 | :--- | :--- | :--- |
-| Release | `🚀 <Repo> · v<versão>` | verde |
-| Pré-lançamento | `🚀 <Repo> · v<versão> · 🧪 Pré-lançamento` | amarela |
-| Push | `🛠️ <Repo> · v<versão> (em preparação)` ou `🛠️ <Repo> · atualização na main` | azul |
+| Release | `🚀 <Repo> v<versão>` | verde |
+| Pré-lançamento | `🚀 <Repo> v<versão> · 🧪 Pré-lançamento` | amarela |
+| Push (só com `ANNOUNCE_PUSH=true`) | `🛠️ <Repo> · v<versão> (em preparação)` ou `🛠️ <Repo> · atualização na main` | azul |
 
 O rodapé mostra quem fez o push ou a release; o nome e o avatar do webhook são os da organização.
 
@@ -70,7 +80,7 @@ O rodapé mostra quem fez o push ou a release; o nome e o avatar do webhook são
    - **Payload URL**: `https://github-relay.empirehub.com.br/`
    - **Content type**: `application/json`
    - **Secret**: um texto longo e aleatório (o mesmo valor do secret `GITHUB_WEBHOOK_SECRET` do worker, abaixo)
-   - **Which events…**: *Let me select individual events* → marque **Pushes** e **Releases**
+   - **Which events…**: *Let me select individual events* → marque **Releases** (e **Pushes**, só se for ligar `ANNOUNCE_PUSH`)
    - Marque **Active**.
 3. Ao salvar, o GitHub envia um `ping` assinado; a entrega deve aparecer como `200`.
 
@@ -93,6 +103,15 @@ npx wrangler secret put GITHUB_TOKEN            # opcional: leitura de repositó
 | `DISCORD_WEBHOOK_URL_1`, `_2`, … | URLs dos webhooks do Discord (`DISCORD_WEBHOOK_URL`, sem número, ainda vale como alternativa). Só URLs `https://discord.com/api/webhooks/…` são usadas. |
 | `GITHUB_TOKEN` | *(Opcional)* token **somente leitura** (conteúdo dos repositórios) para ler o CHANGELOG de repositórios privados. Sem ele, o worker usa `raw.githubusercontent.com`, que só alcança repositórios públicos. O token só é enviado a `api.github.com`. |
 
+### 🔧 Variáveis do worker
+
+Não são segredos: defina como *variável* (**Settings → Variables and Secrets → Text**) e **não** as coloque no `wrangler.jsonc` do repositório. O `wrangler.jsonc` tem `"keep_vars": true`: sem isso, o `wrangler deploy` (wrangler 3.x, também no Workers Builds) apaga as variáveis do painel que não estão no arquivo, e `ANNOUNCE_PUSH` e `RELEASE_MENTION_ROLE_ID` sumiriam a cada deploy.
+
+| Variável | Para quê |
+| :--- | :--- |
+| `ANNOUNCE_PUSH` | *(Opcional)* `true` (sem diferenciar maiúsculas) volta a anunciar os pushes na branch padrão. Qualquer outro valor, ou sem ela, deixa só a release. |
+| `RELEASE_MENTION_ROLE_ID` | *(Opcional)* ID do cargo (17 a 20 dígitos) a mencionar na release estável. Valor inválido é ignorado; o pré-lançamento nunca menciona. |
+
 > ⚠️ A URL de um webhook do Discord equivale a uma senha: quem a tem consegue postar no canal. Se alguma já esteve no repositório (como em versões antigas do `wrangler.jsonc`), **apague esse webhook no Discord e crie outro**, porque ela continua no histórico do Git.
 
 ### Segurança da entrada
@@ -100,7 +119,7 @@ npx wrangler secret put GITHUB_TOKEN            # opcional: leitura de repositó
 - A assinatura é um HMAC SHA-256 do **corpo bruto** com o segredo, conferido em tempo constante (`crypto.subtle.verify`) antes de qualquer outra coisa (inclusive o `ping`).
 - O corpo é lido com limite de 5 MB (`413` acima disso) e só depois interpretado como JSON.
 - Os SHAs e o caminho dos arquivos são validados antes de montar a URL do GitHub; a resposta do GitHub também tem limite de tamanho (1 MB).
-- Erros nunca devolvem nem registram URLs ou segredos; as mensagens enviadas não notificam ninguém (`allowed_mentions` vazio).
+- Erros nunca devolvem nem registram URLs ou segredos; as mensagens não notificam ninguém (`allowed_mentions` vazio), exceto o cargo de `RELEASE_MENTION_ROLE_ID` na release estável.
 
 ---
 

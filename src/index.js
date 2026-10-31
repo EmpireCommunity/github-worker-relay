@@ -1,7 +1,7 @@
 /**
  * GitHub Worker Relay: recebe os webhooks da organização (push e release) e publica no Discord uma mensagem por atualização.
  *
- * O handler só orquestra; as regras (diff do CHANGELOG, commits, formatação) ficam nos módulos puros de `src/`.
+ * Só a release é anunciada; o push fica desligado por padrão (`ANNOUNCE_PUSH=true` liga). O handler só orquestra; as regras (diff do CHANGELOG, commits, formatação) ficam nos módulos puros de `src/`.
  */
 
 import { buildPushMessage, buildReleaseMessage, pushIgnoreReason } from './events.js';
@@ -59,10 +59,10 @@ export async function handleRequest(request, env, deps = {}) {
 
     let message = null;
     if (event === 'release') {
-      message = buildReleaseMessage(payload);
+      message = buildReleaseMessage(payload, { mentionRoleId: env.RELEASE_MENTION_ROLE_ID });
       if (!message) return text(`Ignored release action: ${payload.action}`, 200);
     } else if (event === 'push') {
-      const reason = pushIgnoreReason(payload);
+      const reason = pushIgnoreReason(payload, env);
       if (reason) return text(`Ignored push: ${reason}`, 200);
       const fullName = payload.repository.full_name;
       message = await buildPushMessage(payload, (sha, path) =>
